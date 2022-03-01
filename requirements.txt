@@ -14,7 +14,7 @@ numpy==1.22.2
 
 # Development Requirements
 pre-commit==2.17.0
-pytest==6.2.5
+pytest==7.0.1
 pytest-cov==3.0.0
 python-dateutil==2.8.2
 scikit-image==0.19.1
