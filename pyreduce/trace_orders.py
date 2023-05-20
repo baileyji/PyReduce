@@ -377,8 +377,8 @@ def mark_orders(
     ----------
     im : array[nrow, ncol]
         order definition image
-    min_cluster : int, optional
-        minimum cluster size in pixels (default: 500)
+    min_cluster : int, string optional (default: None)
+        minimum cluster size in pixels (default: 25% of dimension 0)
         'auto': 75% of the order_width_estimate * 75% of the trace_width_estimate
     filter_size : int, float optional
         size of the running filter (default: None)

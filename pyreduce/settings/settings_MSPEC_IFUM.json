@@ -10,10 +10,10 @@
     "orders": {
         "degree": 3,
         "degree_before_merge": 1,
-        "filter_size": 100,
-        "min_cluster": 500,
+        "filter_size": null,
+        "min_cluster": "auto",
         "border_width": 0,
-        "noise": 0,
+        "noise": null,
         "manual": false,
         "auto_merge_threshold": 1,
         "merge_min_threshold": 0.9,

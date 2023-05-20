@@ -128,22 +128,24 @@
                             "type": [
                                 "integer",
                                 "null",
-                                "float"
+                                "number"
                             ],
                             "minimum": 0
                         },
                         "min_cluster": {
-                            "description": "Smallest allowed size of clusters before merging. Estimated automatically if null.",
+                            "description": "Smallest allowed size of clusters before merging. 25$ of dim 0 if null, estimated from the order width and trace width estimates if 'auto'",
                             "type": [
                                 "integer",
-                                "null"
+                                "null",
+                                "string"
                             ],
                             "minimum": 0
                         },
                         "min_width": {
                             "description": "Minimum width of a cluster to be considered after merging. if floating point <1 treated as a fraction of the order_width_estimate",
                             "type": [
-                                "number"
+                                "number",
+                                "null"
                             ],
                             "minimum": 0
                         },
