@@ -1608,7 +1608,7 @@ class WavelengthCalibrationInitialize(WavelengthCalibration):
     ) -> np.ndarray:
         """
         Determines the wavelength polynomial coefficients of a spectrum,
-        based on an line atlas with known spectral lines,
+        based on a line atlas with known spectral lines,
         and an initial guess for the wavelength range.
         The calculation uses an MCMC approach to sample the probability space and
         find the best cross correlation value, between observation and atlas.

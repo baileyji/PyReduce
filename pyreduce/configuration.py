@@ -14,6 +14,8 @@ from os.path import dirname, join
 
 import jsonschema
 
+import pyreduce.instruments.common
+
 logger = logging.getLogger(__name__)
 
 if int(jsonschema.__version__[0]) < 3:  # pragma: no cover
@@ -26,7 +28,7 @@ else:
     hasJsonSchema = True
 
 
-def get_configuration_for_instrument(instrument, **kwargs):
+def get_configuration_for_instrument(instrument, **kwargs) -> dict:
     local = dirname(__file__)
     instrument = str(instrument)
     if instrument in ["pyreduce", None]:

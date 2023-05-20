@@ -11,9 +11,7 @@ from .util import make_index
 logger = logging.getLogger(__name__)
 
 
-def estimate_extraction_width(
-    img, orders, column_range, plot=False
-):  # pragma: no cover
+def estimate_extraction_width(img, orders, column_range, plot=False):  # pragma: no cover
     raise NotImplemented
     nrow, ncol = img.shape
     nord, _ = orders.shape

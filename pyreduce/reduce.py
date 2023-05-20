@@ -201,9 +201,7 @@ def main(
 class Step:
     """Parent class for all steps"""
 
-    def __init__(
-        self, instrument, mode, target, night, output_dir, order_range, **config
-    ):
+    def __init__(self, instrument, mode, target, night, output_dir, order_range, **config):
         self._dependsOn = []
         self._loadDependsOn = []
         #:str: Name of the instrument
@@ -1003,7 +1001,7 @@ class WavelengthCalibrationMaster(CalibrationStep, ExtractionStep):
         """Perform wavelength calibration
 
         This consists of extracting the wavelength image
-        and fitting a polynomial the the known spectral lines
+        and fitting a polynomial the known spectral lines
 
         Parameters
         ----------
@@ -2067,7 +2065,8 @@ class Reducer:
         order_range=None,
         skip_existing=False,
     ):
-        """Reduce all observations from a single night and instrument mode
+        """
+        Reduce all observations from a single night and instrument mode
 
         Parameters
         ----------

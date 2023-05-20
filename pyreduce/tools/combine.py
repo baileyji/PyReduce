@@ -7,7 +7,7 @@ from os.path import dirname, join
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spectres import spectres
+from .spectres import spectres
 from tqdm import tqdm
 
 from .. import echelle
@@ -51,8 +51,8 @@ def combine(files, output, plot=None):
     # wmin, wmax = waves.min(axis=(0, 2)), waves.max(axis=(0, 2))
     # wnew = np.geomspace(wmin, wmax, ncol, endpoint=True).T
     # TODO something weird happens when changing the wavelength grid, that also depends on the wavelength
-    # Maybe points in the grid are interpreted differently, i.e. in the rebinning they are the center of the
-    # bin, but later on they are the edges?
+    #  Maybe points in the grid are interpreted differently, i.e. in the rebinning they are the center of the
+    #  bin, but later on they are the edges?
     wnew = np.copy(waves[0])
 
     for k in tqdm(range(specs.shape[0]), desc="File"):
