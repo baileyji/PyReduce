@@ -252,7 +252,7 @@ def merge_clusters(
 
 
 def fit_polynomials_to_clusters(x, y, clusters, degree, regularization=0):
-    """Fits a polynomial of degree opower to points x, y in cluster clusters
+    """Fits a polynomial of degree opower to points x, y in clusters
 
     Parameters
     ----------
@@ -352,7 +352,7 @@ def plot_order(i, j, x, y, img, deg, title=""):
 def mark_orders(
     im,
     min_cluster=None,
-    min_width=None,
+    min_width=.25,
     filter_size=None,
     noise=None,
     opower=4,
@@ -367,6 +367,9 @@ def mark_orders(
     auto_merge_threshold=0.9,
     merge_min_threshold=0.1,
     sigma=0,
+    order_center_col='auto',
+    trace_width_estimate = None,
+    noise_percentile=5
 ):
     """Identify and trace orders
 
@@ -376,10 +379,15 @@ def mark_orders(
         order definition image
     min_cluster : int, optional
         minimum cluster size in pixels (default: 500)
-    filter_size : int, optional
-        size of the running filter (default: 120)
+        'auto': 75% of the order_width_estimate * 75% of the trace_width_estimate
+    filter_size : int, float optional
+        size of the running filter (default: None)
+        if floating point treat use it as a percentile threshold for the order center column
+         to estimate the number of peaks in that column. Adopt a filter size that is the number
+         of rows divided by twice the number of peaks: e.g. approximately half the spatial width assuming
+         there isn't much lefover space on the ccd
     noise : float, optional
-        noise to filter out (default: 8)
+        noise to filter out (default: auto)
     opower : int, optional
         polynomial degree of the order fit (default: 4)
     border_width : int, optional
@@ -387,22 +395,44 @@ def mark_orders(
     plot : bool, optional
         wether to plot the final order fits (default: False)
     manual : bool, optional
-        wether to manually select clusters to merge (strongly recommended) (default: True)
-
+        whether to manually select clusters to merge (strongly recommended) (default: True)
+    order_center_col: 'auto', None, int
+        if auto the argmax of the spatial sum of the image is used
+        if none the center column is used
+    min_width: int, float, optional (default: 25% of order_width_estimate)
+        minimum order width if floating point <1 treated as a fraction of the order_width_estimate
+        defaults to 25% of order_width_estimate if None
+    trace_width_estimate : float, optional
+        estimate of the order width, default estimated as the mean FWHM of all peaks above
+        the 50th percentile of the order_center_col
+    noise_percentile : float, optional (default: 5)
+        Percentile of the blurred image to use as an estimate of the background noise,
+        ignored if noise is specified.
     Returns
     -------
     orders : array[nord, opower+1]
         order tracing coefficients (in numpy order, i.e. largest exponent first)
+    column_range: array[nord,2]
     """
 
     # Convert to signed integer, to avoid underflow problems
     im = np.asanyarray(im)
     im = im.astype(int)
 
-    if filter_size is None:
-        col = im[:, im.shape[0] // 2]
+    if order_center_col == 'auto':
+        order_center_col = im.sum(0).argmax()
+    elif order_center_col is None:
+        order_center_col = im.shape[1] // 2
+
+    if trace_width_estimate is None:
+        col = im[:, order_center_col]
         col = median_filter(col, 5)
-        threshold = np.percentile(col, 90)
+        x = find_peaks(col, height=np.percentile(col, 50))[0]
+        trace_width_estimate = peak_widths(col, x, rel_height=.5)[0].mean()
+
+    if filter_size is None or isinstance(filter_size, float):
+        col = median_filter(im[:, order_center_col], 5)
+        threshold = np.percentile(col, (filter_size or .9)*100)
         npeaks = find_peaks(col, height=threshold)[0].size
         filter_size = im.shape[0] // (npeaks * 2)
         logger.info("Median filter size, estimated: %i", filter_size)
@@ -411,7 +441,7 @@ def mark_orders(
 
     if border_width is None:
         # find width of orders, based on central column
-        col = im[:, im.shape[0] // 2]
+        col = im[:, order_center_col]
         col = median_filter(col, 5)
         idx = np.argmax(col)
         width = peak_widths(col, [idx])[0][0]
@@ -420,18 +450,24 @@ def mark_orders(
     elif border_width < 0:
         raise ValueError(f"Expected border width > 0, but got {border_width}")
 
-    if min_cluster is None:
-        min_cluster = im.shape[1] // 4
+    order_width_estimate = peak_widths(im.sum(0), [order_center_col], rel_height=.9)[0][0]
+
+    if min_cluster is None or min_cluster=='auto':
+        if min_cluster is 'auto':
+            min_cluster = .75*order_width_estimate * .75*trace_width_estimate
+        else:
+            min_cluster = im.shape[0] // 4
         logger.info("Minimum cluster size, estimated: %i", min_cluster)
     elif not np.isscalar(min_cluster):
         raise TypeError(f"Expected scalar minimum cluster size, but got {min_cluster}")
 
     if min_width is None:
         min_width = 0.25
+        
     if min_width == 0:
         pass
-    elif isinstance(min_width, (float, np.floating)):
-        min_width = int(min_width * im.shape[0])
+    elif min_width<1 and isinstance(min_width, (float, np.floating)):
+        min_width = int(min_width * order_width_estimate)
         logger.info("Minimum order width, estimated: %i", min_width)
 
     # im[im < 0] = np.ma.masked
@@ -442,7 +478,7 @@ def mark_orders(
 
     if noise is None:
         tmp = np.abs(blurred.flatten())
-        noise = np.percentile(tmp, 5)
+        noise = np.percentile(tmp, noise_percentile)
         logger.info("Background noise, estimated: %f", noise)
     elif not np.isscalar(noise):
         raise TypeError(f"Expected scalar noise level, but got {noise}")
@@ -480,17 +516,18 @@ def mark_orders(
     x = {i: np.where(clusters == c)[0] for i, c in enumerate(n)}
     y = {i: np.where(clusters == c)[1] for i, c in enumerate(n)}
 
+    #x is the row of the trace, y the columns
+
+    #Estimate wavelength curvature
+    # endpoints = list(zip(*[(y[i].max(), x[i][y[i].argmax()]) for i in x.keys()]))
+    # plt.plot(np.poly1d(np.polyfit(*endpoints[::-1], 2))(np.arange(4096)), np.arange(4096))
+
     def best_fit_degree(x, y):
         L1 = np.sum((np.polyval(np.polyfit(y, x, 1), y) - x) ** 2)
         L2 = np.sum((np.polyval(np.polyfit(y, x, 2), y) - x) ** 2)
-
         # aic1 = 2 + 2 * np.log(L1) + 4 / (x.size - 2)
         # aic2 = 4 + 2 * np.log(L2) + 12 / (x.size - 3)
-
-        if L1 < L2:
-            return 1
-        else:
-            return 2
+        return 1 if L1 < L2 else 2
 
     if sigma > 0:
         degree = {i: best_fit_degree(x[i], y[i]) for i in x.keys()}
@@ -512,9 +549,8 @@ def mark_orders(
         # plt.show()
         #
 
-        m = {
-            i: np.abs(np.polyval(coef, y[i]) - (x[i] - bias[i])) < cutoff
-            for i in x.keys()
+        m = {i: np.abs(np.polyval(coef, y[i]) - (x[i] - bias[i])) < cutoff
+             for i in x.keys()
         }
 
         k = max(x.keys()) + 1
@@ -581,7 +617,6 @@ def mark_orders(
     orders = fit_polynomials_to_clusters(x, y, n, opower)
 
     # sort orders from bottom to top, using relative position
-
     def compare(i, j):
         _, xi, i_left, i_right = i
         _, xj, j_left, j_right = j

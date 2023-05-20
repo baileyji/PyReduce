@@ -39,7 +39,10 @@
         "border_width": null,
         "manual": true,
         "plot": true,
-        "plot_title": "Order Tracing"
+        "plot_title": "Order Tracing",
+        "order_center_col": "auto",
+        "trace_width_estimate": null,
+        "noise_percentile": 5
     },
     "scatter": {
         "scatter_degree": 4,

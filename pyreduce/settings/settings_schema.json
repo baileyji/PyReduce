@@ -124,10 +124,11 @@
                             "minimum": 0
                         },
                         "filter_size": {
-                            "description": "Size of the gaussian filter that smoothes the columns for the detection of pixels with signal. Estimated automatically if null.",
+                            "description": "Size of the gaussian filter that smoothes the columns for the detection of pixels with signal. Estimated automatically if null (90% percentile) or floating point. Float values are interpreted as a percentile threshold for the center column to estimate the number of peaks in that column. Adopt a filter size that is the number of rows divided by twice the number of peaks: e.g. approximately half the spatial width assuming there isn't much lefover space on the ccd",
                             "type": [
                                 "integer",
-                                "null"
+                                "null",
+                                "float"
                             ],
                             "minimum": 0
                         },
@@ -140,10 +141,9 @@
                             "minimum": 0
                         },
                         "min_width": {
-                            "description": "Minimum width of a cluster to be considered after merging. If between 0 and 1, use that fraction of the detector width. Estimated automatically if null",
+                            "description": "Minimum width of a cluster to be considered after merging. if floating point <1 treated as a fraction of the order_width_estimate",
                             "type": [
-                                "number",
-                                "null"
+                                "number"
                             ],
                             "minimum": 0
                         },
@@ -152,6 +152,30 @@
                             "type": [
                                 "integer",
                                 "null"
+                            ],
+                            "minimum": 0
+                        },
+                        "order_center_col": {
+                            "description": "Column location of the order center, auto uses the argmax of the spatial sum, null=central column.",
+                            "type": [
+                                "integer",
+                                "string",
+                                "null"
+                            ],
+                            "minimum": 0
+                        },
+                        "trace_width_estimate": {
+                            "description": "estimate of the order width, default estimated as the mean FWHM of all peaks above the 50th percentile of the order_center_col",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 0
+                        },
+                        "noise_percentile": {
+                            "description": "Percentile of the blurred image to use as an estimate of the background noise, ignored if noise is specified",
+                            "type": [
+                                "number"
                             ],
                             "minimum": 0
                         },
